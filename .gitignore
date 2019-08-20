@@ -350,3 +350,19 @@ MigrationBackup/
 
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
+RockWeb/*
+!RockWeb/
+!RockWeb/Plugins
+!RockWeb/Plugins/*
+!RockWeb/Plugins/apollosproject
+!RockWeb/Plugins/apollosproject/
+!RockWeb/Plugins/apollosproject/**/
+packages/
+Packages.dgml
+MigrationBackup/
+ca.spac.CraTaxReceiptGenerator/
+local.apollos.sampleProject/
+Rockit.sln
+
+
+
