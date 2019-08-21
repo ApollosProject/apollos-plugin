@@ -21,6 +21,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <DocumentationFile>bin\Debug\apollosproject.ApollosPlugin.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -29,6 +30,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <DocumentationFile>bin\Release\apollosproject.ApollosPlugin.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Rock, Version=1.9.0.23, Culture=neutral, processorArchitecture=MSIL">
@@ -58,6 +60,45 @@
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>XCOPY "$(ProjectDir)Blocks\*" "$(ProjectDir)..\RockWeb\Plugins\apollosproject\ApollosPlugin\" /s /i /y</PostBuildEvent>
+    <PostBuildEvent>
+    </PostBuildEvent>
   </PropertyGroup>
+  <Import Project="$(VSToolsPath)\TextTemplating\Microsoft.TextTemplating.targets" />
+  <!-- ******************************************************************** -->
+  <!-- Get the path to the project assembly                                 -->
+  <!-- ******************************************************************** -->
+  <PropertyGroup>
+    <TheAssembly>$(OutputPath)apollosproject.ApollosPlugin.dll</TheAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <PluginName>apollosproject.ApollosPlugin</PluginName>
+  </PropertyGroup>
+  <Target Name="UpdateAssemblyVersion" BeforeTargets="CoreBuild" Condition="'$(Configuration)' == 'Release'">
+    <Message Importance="High" Text="Automatically updated assembly version." />
+  </Target>
+  <Target Name="PackagePlugin" AfterTargets="Build" Condition="'$(Configuration)' == 'Release'">
+    <!-- Read the version number from the assembly -->
+    <GetAssemblyIdentity AssemblyFiles="$(TheAssembly)">
+      <Output TaskParameter="Assemblies" ItemName="TheVersion" />
+    </GetAssemblyIdentity>
+    <MakeDir Directories="$(ProjectDir)Packaging" Condition="!Exists('$(ProjectDir)Packaging')" />
+    <Message Importance="High" Text="Packaging version: %(TheVersion.Version)" />
+    <!-- Zip it real good -->
+    <!-- ******************************************************************** -->
+    <!-- Zip it                                                               -->
+    <!-- Unfortunately, the powershell Compress-Archive is not compatible     -->
+    <!-- with Rock's RockShop installer, so you have to manually zip it.      -->
+    <!-- ******************************************************************** -->
+    <Exec Command="echo &quot;%(TheVersion.Version)&quot; &gt; .version " />
+    <Exec Command="xcopy &quot;.version&quot; $(ProjectDir)Packaging\temp\install\ /y /i" />
+    <Exec Command="xcopy &quot;.version&quot; $(ProjectDir)Packaging\temp\uninstall\ /y /i" />
+    <Exec Command="xcopy &quot;$(OutputPath)apollosproject.ApollosPlugin.dll&quot; $(ProjectDir)Packaging\temp\content\bin\ /y /i" />
+    <Exec Command="xcopy &quot;$(OutputPath)apollosproject.ApollosPlugin.xml&quot; $(ProjectDir)Packaging\temp\content\bin\ /y /i" />
+    <Exec Command="xcopy &quot;..\RockWeb\Plugins\apollosproject&quot; $(ProjectDir)Packaging\temp\content\Plugins\apollosproject\ /y /i /e" />
+    <Message Importance="High" Text="Zipping to $(ProjectDir)Packaging\$(PluginName).%(TheVersion.Version).zip" />
+    <Exec Command="(powershell Compress-Archive -CompressionLevel NoCompression -Path $(ProjectDir)Packaging\temp\* -DestinationPath '$(ProjectDir)Packaging\$(PluginName).%(TheVersion.Version).REZIP_AND_RENAME_PLUGIN.zip' -Force)" />
+    <Exec Command="REM ren &quot;$(ProjectDir)Packaging\$(PluginName).%(TheVersion.Version).zip&quot; &quot;$(PluginName).%(TheVersion.Version).plugin&quot;" />
+    <Exec Command="REM rmdir $(ProjectDir)Packaging\temp /s /q" />
+    <Message Importance="High" Text="IMPORTANT! Actually, you need to do that step by re-zipping up everything under $(ProjectDir)Packaging\temp\ USING REGULAR COMPRESS, then rename it to .plugin, and move under the ..\X.Y.Z folder." />
+  </Target>
 </Project>
