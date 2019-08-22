@@ -10,6 +10,7 @@ using Rock.Model;
 using Rock.Data;
 using Rock.Web.Cache;
 using Rock.Web.UI.Controls;
+using Rock.Security;
 
 namespace RockWeb.Plugins.apollosproject.ApollosPlugin
 {
@@ -25,14 +26,14 @@ namespace RockWeb.Plugins.apollosproject.ApollosPlugin
             if (!Page.IsPostBack)
             {
                 RestAction getCurrentUserAction = new RestActionService(new RockContext()).Queryable().Where(a => a.Path == "api/People/GetCurrentPerson").First();
-                bool isUnBlocked = getCurrentUserAction.IsAuthorized("View", null);
+                bool isUnBlocked = getCurrentUserAction.IsAuthorized(Authorization.VIEW, null);
                 if (isUnBlocked)
                 {
                     MarkAuthUnBlocked();
                 }
                 else
                 {
-                    MarkAuthBlocked();
+                    MarkAuthBlocked(getCurrentUserAction);
                 }
             }
         }
@@ -40,15 +41,15 @@ namespace RockWeb.Plugins.apollosproject.ApollosPlugin
         protected void btnEnableGetCurrentPerson_Click(object sender, EventArgs e)
         {
             RestAction getCurrentUserAction = new RestActionService(new RockContext()).Queryable().Where(a => a.Path == "api/People/GetCurrentPerson").First();
-            Rock.Security.Authorization.AllowAllUsers(getCurrentUserAction, "View");
+            Rock.Security.Authorization.AllowAllUsers(getCurrentUserAction, Authorization.VIEW);
             MarkAuthUnBlocked();
         }
 
-        private void MarkAuthBlocked()
+        private void MarkAuthBlocked(RestAction getCurrentUserAction)
         {
             GetCurrentPersonEnabled.Text =  "Auth Blocked";
             GetCurrentPersonEnabled.NotificationBoxType = NotificationBoxType.Danger;
-            enableGetCurrentPerson.Visible = true;
+            enableGetCurrentPerson.Visible = true && getCurrentUserAction.IsAuthorized(Authorization.EDIT, this.CurrentPerson);
         }
 
         private void MarkAuthUnBlocked() {
