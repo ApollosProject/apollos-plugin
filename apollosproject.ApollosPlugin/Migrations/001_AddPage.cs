@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace apollosproject.ApollosPlugin.Migrations
 {
+    [MigrationNumber(1, "1.0.13")]
     class AddPage : Migration
     {
         public override void Up()
