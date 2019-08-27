@@ -53,7 +53,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Migrations\000_AddPage.cs" />
+    <Compile Include="Migrations\001_AddPage.cs" />
     <Compile Include="Rest\ApollosController.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
