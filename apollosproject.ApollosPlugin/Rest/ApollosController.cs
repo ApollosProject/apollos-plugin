@@ -74,7 +74,9 @@ namespace apollosproject.ApollosPlugin.Rest
             // I want a list of content channel items whose ids match up to attribute values that represent entity ids
             IQueryable<ContentChannelItem> contentChannelItemList = new ContentChannelItemService(rockContext)
                 .Queryable()
-                .WhereAttributeValue(rockContext, av => attributeIdList.Contains(av.AttributeId) && guidList.Contains(av.Value));
+                .WhereAttributeValue(rockContext, av => attributeIdList.Contains(av.AttributeId) && guidList.Any(guid => av.Value.Contains(guid)));
+
+
 
             // Return this list
             return contentChannelItemList;
