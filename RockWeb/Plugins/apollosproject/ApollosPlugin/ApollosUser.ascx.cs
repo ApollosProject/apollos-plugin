@@ -55,6 +55,7 @@ namespace RockWeb.Plugins.apollosproject.ApollosPlugin
         protected void btnCreateApollosApiUserClick(object sender, EventArgs e)
         {
             CreateUser();
+            BindData();
         }
 
         protected void btnShowApiKey(object sender, EventArgs e)
@@ -121,8 +122,10 @@ namespace RockWeb.Plugins.apollosproject.ApollosPlugin
                 var groupMemberService = new GroupMemberService(rockContext);
                 var groupMember = new GroupMember();
                 groupMember.PersonId = restUser.Id;
-                groupMember.GroupId = DefinedValueCache.Get(Rock.SystemGuid.Group.GROUP_ADMINISTRATORS.AsGuid()).Id;
-                groupMember.GroupRoleId = DefinedValueCache.Get(Rock.SystemGuid.GroupRole.GROUPROLE_SECURITY_GROUP_MEMBER.AsGuid()).Id;
+                var adminGroup = new GroupService(rockContext).Get(Rock.SystemGuid.Group.GROUP_ADMINISTRATORS.AsGuid());
+                groupMember.GroupId = adminGroup.Id;
+                var securityGroupMember = adminGroup.GroupType.Roles.Where(r => r.Guid.Equals(Rock.SystemGuid.GroupRole.GROUPROLE_SECURITY_GROUP_MEMBER.AsGuid())).First();
+                groupMember.GroupRoleId = securityGroupMember.Id;
                 groupMember.GroupMemberStatus = GroupMemberStatus.Active;
                 if (groupMember.IsValid)
                 {
