@@ -21,6 +21,11 @@ namespace apollosproject.ApollosPlugin.Rest
     {
 
         #region GetContentByIds
+        /// <summary>
+        /// Returns a list of content channel items based on a list of content channel item ids.
+        /// </summary>
+        /// <param name="ids"></param>
+        /// <returns></returns>
         [HttpGet]
         [EnableQuery]
         [Authenticate, Secured]
@@ -39,11 +44,9 @@ namespace apollosproject.ApollosPlugin.Rest
         #region ContentByDataViewGuids
         /// <summary>
         /// Returns a list of content channel items based on a list of dataview guids
-
         /// </summary>
-        /// <param name="guids"></para
+        /// <param name="guids"></param>
         /// <returns></returns>
-
         [HttpGet]
         [EnableQuery]
         [Authenticate, Secured]
@@ -87,7 +90,6 @@ namespace apollosproject.ApollosPlugin.Rest
 
 
         #region DataViewByPerson
-
         /// <summary>
         /// Returns a list of dataviews that a person is a part of
         /// </summary>
@@ -122,9 +124,25 @@ namespace apollosproject.ApollosPlugin.Rest
             return dataViewList;
 
         }
+        #endregion
 
-
-
+        #region GetEventItemOccurencesByCalendarId
+        /// <summary>
+        /// Returns a list of event item occurences, filtered by a specific CalendarId
+        /// </summary>
+        /// <param name="ids"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [EnableQuery]
+        [Authenticate, Secured]
+        [System.Web.Http.Route("api/Apollos/GetEventItemOccurencesByCalendarId")]
+        public IQueryable<EventItemOccurrence> GetEventItemOccurencesByCalendarId(int id)
+        {
+            RockContext rockContext = new RockContext();
+            List<int> itemOccurenceIds = new EventCalendarItemService(rockContext).Queryable().Where(item => id == item.EventCalendarId).Select(item => item.EventItemId).ToList();
+            IQueryable<EventItemOccurrence> itemOccurences = new EventItemOccurrenceService(rockContext).Queryable().Where(item => itemOccurenceIds.Contains(item.Id));
+            return itemOccurences;
+        }
         #endregion
 
     }
