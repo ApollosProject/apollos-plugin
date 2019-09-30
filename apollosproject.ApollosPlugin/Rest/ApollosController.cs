@@ -145,5 +145,109 @@ namespace apollosproject.ApollosPlugin.Rest
         }
         #endregion
 
+
+        #region ContentChannelItemsByCampusIdAndAttributeValue
+        /// <summary>
+        /// Returns a list of content channel items filtered by an attribute value and a campus id
+        /// </summary>
+        /// <param name="attributeValues"></param>
+        /// <param name="attributeKey"></param>
+        /// <param name="campusId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [EnableQuery]
+        [Authenticate, Secured]
+        [System.Web.Http.Route("api/Apollos/ContentChannelItemsByCampusIdAndAttributeValue")]
+        public IQueryable<ContentChannelItem> ContentChannelItemsByCampusIdAndAttributeValue(string attributeValues, string attributeKey, int campusId)
+        {
+            RockContext rockContext = new RockContext();
+
+            // Turn the comma separated list of guids into a list of strings.
+            List<string> attributeValueList = (attributeValues ?? "").Split(',').ToList();
+
+            string campusGuid = new CampusService(rockContext).Get(campusId).Guid.ToString();
+
+            // Get the Id of the Rock.Model.ContentChannelItem Entity.
+            int contentChannelItemEntityTypeId = EntityTypeCache.Get("Rock.Model.ContentChannelItem").Id;
+
+            // Get the Field Type (Attribute Type) Id of the Data View Field Type.
+            int fieldTypeId = FieldTypeCache.Get(Rock.SystemGuid.FieldType.CAMPUSES.AsGuid()).Id;
+
+            // Get the list of attributes that are of the Rock.Model.ContentChannelItem entity type
+            // and that are of the Campus field type.
+            List<int> campusAttributeIdList = new AttributeService(rockContext)
+                .GetByEntityTypeId(contentChannelItemEntityTypeId)
+                .Where(item => item.FieldTypeId == fieldTypeId)
+                .Select(a => a.Id)
+                .ToList();
+
+            // Get the list of attributes that are of the Rock.Model.ContentChannelItem entity type
+            // and that are named the the same as the incoming attributeName
+            List<int> attributeIdList = new AttributeService(rockContext)
+                .GetByEntityTypeId(contentChannelItemEntityTypeId)
+                .Where(item => item.Key == attributeKey)
+                .Select(a => a.Id)
+                .ToList();
+
+
+
+            // I want a list of content channel items whose ids match up to attribute values that represent entity ids
+            IQueryable<ContentChannelItem> contentChannelItemList = new ContentChannelItemService(rockContext)
+                .Queryable()
+                .WhereAttributeValue(rockContext, av => campusAttributeIdList.Contains(av.AttributeId) && av.Value.Contains(campusGuid))
+                .WhereAttributeValue(rockContext, av => attributeIdList.Contains(av.AttributeId) && attributeValueList.Any(value => av.Value.Contains(value)));
+
+
+
+            // Return this list
+            return contentChannelItemList;
+
+        }
+
+        #endregion
+
+        #region ContentChannelItemsByAttributeValue
+        /// <summary>
+        /// Returns a list of content channel items filtered by an attribute valu
+        /// </summary>
+        /// <param name="attributeValues"></param>
+        /// <param name="attributeKey"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [EnableQuery]
+        [Authenticate, Secured]
+        [System.Web.Http.Route("api/Apollos/ContentChannelItemsByAttributeValue")]
+        public IQueryable<ContentChannelItem> ContentChannelItemsByAttributeValue(string attributeValues, string attributeKey)
+        {
+            RockContext rockContext = new RockContext();
+
+            // Turn the comma separated list of guids into a list of strings.
+            List<string> attributeValueList = (attributeValues ?? "").Split(',').ToList();
+
+            // Get the Id of the Rock.Model.ContentChannelItem Entity.
+            int contentChannelItemEntityTypeId = EntityTypeCache.Get("Rock.Model.ContentChannelItem").Id;
+
+            // Get the list of attributes that are of the Rock.Model.ContentChannelItem entity type
+            // and that are named the the same as the incoming attributeName
+            List<int> attributeIdList = new AttributeService(rockContext)
+                .GetByEntityTypeId(contentChannelItemEntityTypeId)
+                .Where(item => item.Key == attributeKey)
+                .Select(a => a.Id)
+                .ToList();
+
+
+            // I want a list of content channel items whose ids match up to attribute values that represent entity ids
+            IQueryable<ContentChannelItem> contentChannelItemList = new ContentChannelItemService(rockContext)
+                .Queryable()
+                .WhereAttributeValue(rockContext, av => attributeIdList.Contains(av.AttributeId) && attributeValueList.Any(value => av.Value.Contains(value)));
+
+
+
+            // Return this list
+            return contentChannelItemList;
+
+        }
+
+        #endregion
     }
 }
