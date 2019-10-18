@@ -20,6 +20,7 @@ namespace apollosproject.ApollosPlugin.Rest
     public class ApollosController : ApiControllerBase
     {
 
+
         #region GetContentByIds
         /// <summary>
         /// Returns a list of content channel items based on a list of content channel item ids.
@@ -33,6 +34,7 @@ namespace apollosproject.ApollosPlugin.Rest
         public IQueryable<ContentChannelItem> GetByIds( string ids)
         {
             RockContext rockContext = new RockContext();
+            rockContext.Configuration.ProxyCreationEnabled = false;
             List<int> idList = ids.Split(',').Select(int.Parse).ToList();
             IQueryable<ContentChannelItem> contentChannelItemList = new ContentChannelItemService(rockContext).Queryable().Where(item => idList.Contains(item.Id)) ;
 
@@ -53,7 +55,8 @@ namespace apollosproject.ApollosPlugin.Rest
         [System.Web.Http.Route("api/Apollos/ContentChannelItemsByDataViewGuids")]
         public IQueryable<ContentChannelItem> GetFromPersonDataView(string guids)
         {
-            RockContext rockContext = new RockContext();
+            var rockContext = new RockContext();
+            rockContext.Configuration.ProxyCreationEnabled = false;
 
             // Turn the comma separated list of guids into a list of strings.
             List<string> guidList = (guids ?? "").Split(',').ToList();
@@ -105,6 +108,7 @@ namespace apollosproject.ApollosPlugin.Rest
         public IQueryable<DataView> GetPersistedDataViewsForEntity(int entityTypeId, int entityId, System.Guid? categoryGuid = null, int categoryId = 0)
         {
             var rockContext = new RockContext();
+            rockContext.Configuration.ProxyCreationEnabled = false;
 
             // Get the data view guids from the DataViewPersistedValues table that the Person Id is a part of
             var persistedValuesQuery = rockContext.DataViewPersistedValues.Where(a => a.EntityId == entityId && a.DataView.EntityTypeId == entityTypeId);
@@ -130,7 +134,7 @@ namespace apollosproject.ApollosPlugin.Rest
         /// <summary>
         /// Returns a list of event item occurences, filtered by a specific CalendarId
         /// </summary>
-        /// <param name="ids"></param>
+        /// <param name="id"></param>
         /// <returns></returns>
         [HttpGet]
         [EnableQuery]
@@ -138,9 +142,15 @@ namespace apollosproject.ApollosPlugin.Rest
         [System.Web.Http.Route("api/Apollos/GetEventItemOccurencesByCalendarId")]
         public IQueryable<EventItemOccurrence> GetEventItemOccurencesByCalendarId(int id)
         {
-            RockContext rockContext = new RockContext();
-            List<int> itemOccurenceIds = new EventCalendarItemService(rockContext).Queryable().Where(item => id == item.EventCalendarId).Select(item => item.EventItemId).ToList();
-            IQueryable<EventItemOccurrence> itemOccurences = new EventItemOccurrenceService(rockContext).Queryable().Where(item => itemOccurenceIds.Contains(item.Id));
+            var rockContext = new RockContext();
+            rockContext.Configuration.ProxyCreationEnabled = false;
+            EventItemOccurrenceService eventItemOccurenceService = new EventItemOccurrenceService(rockContext);
+
+            IQueryable<EventItemOccurrence> itemOccurences = eventItemOccurenceService.Queryable().Join(new EventCalendarItemService(rockContext).Queryable(), occurence => occurence.EventItemId, eventCalendarItem => eventCalendarItem.EventItemId, (occurence, eventCalendarItem) => new
+            {
+                CalendarId = eventCalendarItem.EventCalendarId,
+                EventItemOccurence = occurence
+            }).Where(ec => ec.CalendarId == id).Select(ec => ec.EventItemOccurence);
             return itemOccurences;
         }
         #endregion
@@ -160,7 +170,8 @@ namespace apollosproject.ApollosPlugin.Rest
         [System.Web.Http.Route("api/Apollos/ContentChannelItemsByCampusIdAndAttributeValue")]
         public IQueryable<ContentChannelItem> ContentChannelItemsByCampusIdAndAttributeValue(string attributeValues, string attributeKey, int campusId)
         {
-            RockContext rockContext = new RockContext();
+            var rockContext = new RockContext();
+            rockContext.Configuration.ProxyCreationEnabled = false;
 
             // Turn the comma separated list of guids into a list of strings.
             List<string> attributeValueList = (attributeValues ?? "").Split(',').ToList();
@@ -249,5 +260,6 @@ namespace apollosproject.ApollosPlugin.Rest
         }
 
         #endregion
+
     }
 }
