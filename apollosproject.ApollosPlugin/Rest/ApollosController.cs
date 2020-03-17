@@ -43,6 +43,27 @@ namespace apollosproject.ApollosPlugin.Rest
         }
         #endregion
 
+        #region GetInteractionsByForeignKeys
+        /// <summary>
+        /// Returns a list of interactions based on a list of foreign keys
+        /// </summary>
+        /// <param name="keys"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [EnableQuery]
+        [Authenticate, Secured]
+        [System.Web.Http.Route("api/Apollos/GetInteractionsByForeignKeys")]
+        public IQueryable<Interaction> GetInteractionsByForeignKeys(string keys)
+        {
+            RockContext rockContext = new RockContext();
+            rockContext.Configuration.ProxyCreationEnabled = false;
+            List<string> keyList = keys.Split(',').ToList();
+            IQueryable<Interaction> interactionList = new InteractionService(rockContext).Queryable().AsNoTracking().Where(i => keyList.Contains(i.ForeignKey));
+
+            return interactionList;
+        }
+        #endregion
+
 
         #region ContentByDataViewGuids
         /// <summary>
