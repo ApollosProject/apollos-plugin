@@ -14,6 +14,7 @@ using Rock.Rest.Filters;
 using Rock.Web.Cache;
 using Rock.Rest;
 using Rock;
+using System.Data.Entity;
 
 namespace apollosproject.ApollosPlugin.Rest
 {
@@ -36,7 +37,7 @@ namespace apollosproject.ApollosPlugin.Rest
             RockContext rockContext = new RockContext();
             rockContext.Configuration.ProxyCreationEnabled = false;
             List<int> idList = ids.Split(',').Select(int.Parse).ToList();
-            IQueryable<ContentChannelItem> contentChannelItemList = new ContentChannelItemService(rockContext).Queryable().Where(item => idList.Contains(item.Id)) ;
+            IQueryable<ContentChannelItem> contentChannelItemList = new ContentChannelItemService(rockContext).Queryable().AsNoTracking().Where(item => idList.Contains(item.Id)) ;
 
             return contentChannelItemList;
         }
@@ -80,6 +81,7 @@ namespace apollosproject.ApollosPlugin.Rest
             // I want a list of content channel items whose ids match up to attribute values that represent entity ids
             IQueryable<ContentChannelItem> contentChannelItemList = new ContentChannelItemService(rockContext)
                 .Queryable()
+                .AsNoTracking()
                 .WhereAttributeValue(rockContext, av => attributeIdList.Contains(av.AttributeId) && guidList.Any(guid => av.Value.Contains(guid)));
 
 
@@ -111,7 +113,7 @@ namespace apollosproject.ApollosPlugin.Rest
             rockContext.Configuration.ProxyCreationEnabled = false;
 
             // Get the data view guids from the DataViewPersistedValues table that the Person Id is a part of
-            var persistedValuesQuery = rockContext.DataViewPersistedValues.Where(a => a.EntityId == entityId && a.DataView.EntityTypeId == entityTypeId);
+            var persistedValuesQuery = rockContext.DataViewPersistedValues.AsNoTracking().Where(a => a.EntityId == entityId && a.DataView.EntityTypeId == entityTypeId);
             IQueryable<DataView> dataViewList = persistedValuesQuery.Select(a => a.DataView);
 
             if (categoryGuid != null)
@@ -146,7 +148,7 @@ namespace apollosproject.ApollosPlugin.Rest
             rockContext.Configuration.ProxyCreationEnabled = false;
             EventItemOccurrenceService eventItemOccurenceService = new EventItemOccurrenceService(rockContext);
 
-            IQueryable<EventItemOccurrence> itemOccurences = eventItemOccurenceService.Queryable().Join(new EventCalendarItemService(rockContext).Queryable(), occurence => occurence.EventItemId, eventCalendarItem => eventCalendarItem.EventItemId, (occurence, eventCalendarItem) => new
+            IQueryable<EventItemOccurrence> itemOccurences = eventItemOccurenceService.Queryable().AsNoTracking().Join(new EventCalendarItemService(rockContext).Queryable(), occurence => occurence.EventItemId, eventCalendarItem => eventCalendarItem.EventItemId, (occurence, eventCalendarItem) => new
             {
                 CalendarId = eventCalendarItem.EventCalendarId,
                 EventItemOccurence = occurence
@@ -205,8 +207,68 @@ namespace apollosproject.ApollosPlugin.Rest
             // I want a list of content channel items whose ids match up to attribute values that represent entity ids
             IQueryable<ContentChannelItem> contentChannelItemList = new ContentChannelItemService(rockContext)
                 .Queryable()
+                .AsNoTracking()
                 .WhereAttributeValue(rockContext, av => campusAttributeIdList.Contains(av.AttributeId) && av.Value.Contains(campusGuid))
                 .WhereAttributeValue(rockContext, av => attributeIdList.Contains(av.AttributeId) && attributeValueList.Any(value => av.Value.Contains(value)));
+
+
+
+            // Return this list
+            return contentChannelItemList;
+
+        }
+
+        #endregion
+
+        #region ContentChannelItemsByCampusId
+        /// <summary>
+        /// Returns a list of content channel items filtered by a campusId
+        /// </summary>
+        /// <param name="campusId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [EnableQuery]
+        [Authenticate, Secured]
+        [System.Web.Http.Route("api/Apollos/ContentChannelItemsByCampusId")]
+        public IQueryable<ContentChannelItem> ContentChannelItemsByAttributeValue(int campusId)
+        {
+            RockContext rockContext = new RockContext();
+
+            string campusGuid = new CampusService(rockContext).Get(campusId).Guid.ToString();
+
+            // Get the Id of the Rock.Model.ContentChannelItem Entity.
+            int contentChannelItemEntityTypeId = EntityTypeCache.Get("Rock.Model.ContentChannelItem").Id;
+
+            // Get the Field Type (Attribute Type) Id of the Data View Field Type.
+            int fieldTypeId = FieldTypeCache.Get(Rock.SystemGuid.FieldType.CAMPUSES.AsGuid()).Id;
+
+            // Get the list of attributes that are of the Rock.Model.ContentChannelItem entity type
+            // and that are of the Campus field type.
+            List<int> campusAttributeIdList = new AttributeService(rockContext)
+                .GetByEntityTypeId(contentChannelItemEntityTypeId)
+                .Where(item => item.FieldTypeId == fieldTypeId)
+                .Select(a => a.Id)
+                .ToList();
+
+            List<string> campusAttributeIdKeyList = new AttributeService(rockContext)
+                .GetByEntityTypeId(contentChannelItemEntityTypeId)
+                .Where(item => item.FieldTypeId == fieldTypeId)
+                .Select(a => a.Key)
+                .ToList();
+
+            var avsWithCampus = new AttributeValueService(rockContext).Queryable()
+                .Where(a => campusAttributeIdList.Contains(a.AttributeId))
+                .Where(a => a.Attribute.EntityTypeId == contentChannelItemEntityTypeId)
+                .Where(a => a.Value.Contains(campusGuid))
+                .Select(a => a.EntityId);
+
+
+
+            // I want a list of content channel items whose ids match up to attribute values that represent entity ids
+            IQueryable<ContentChannelItem> contentChannelItemList = new ContentChannelItemService(rockContext)
+                .Queryable()
+                .AsNoTracking()
+                .Where(c => avsWithCampus.Contains(c.Id) || c.Attributes.Keys.Contains(campusAttributeIdKeyList.FirstOrDefault()));
 
 
 
@@ -250,6 +312,7 @@ namespace apollosproject.ApollosPlugin.Rest
             // I want a list of content channel items whose ids match up to attribute values that represent entity ids
             IQueryable<ContentChannelItem> contentChannelItemList = new ContentChannelItemService(rockContext)
                 .Queryable()
+                .AsNoTracking()
                 .WhereAttributeValue(rockContext, av => attributeIdList.Contains(av.AttributeId) && attributeValueList.Any(value => av.Value.Contains(value)));
 
 
