@@ -345,5 +345,48 @@ namespace apollosproject.ApollosPlugin.Rest
 
         #endregion
 
+
+        #region ContentChannelItems/GetByCurrentPerson
+
+        /// <summary>
+        /// Returns a list of content channel items filtered by the permissions of the current person.
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [EnableQuery]
+        [Authenticate, Secured]
+        [System.Web.Http.Route("api/Apollos/ContentChannelItems/GetByCurrentPerson")]
+        public IQueryable<ContentChannelItem> GetByCurrentPerson()
+        {
+            // Set an empty list for the final set of Content Channel Items that gets returned to the users
+            List<ContentChannelItem> contentChannelItems = new List<ContentChannelItem>();
+
+            // Pulled code from the `api/Apollos/GetContentChannelItemsByIds` as a point of reference for
+            // requesting Content Channel Items
+            RockContext rockContext = new RockContext();
+            rockContext.Configuration.ProxyCreationEnabled = false;
+            IQueryable<ContentChannelItem> contentChannelItemList = new ContentChannelItemService(rockContext).Queryable().AsNoTracking();
+
+            // Gets the Current Person and loops through each Content Channel Item that was returned from the query.
+            // Since this is a get request, we want to filter the list by Rock's "View" permissions based on the 
+            // current person. If no person is passed, Rock will limit to only Content Channel Items that have the
+            // system permission of "All Users"
+            //
+            // Logic pulled/referenced from the `GetChildren` method in the ContentChannelItemsController.Partial.cs
+            // in the Core Rock project
+            var person = GetPerson();
+            foreach (var item in contentChannelItemList)
+            {
+                if (item.IsAuthorized(Rock.Security.Authorization.VIEW, person))
+                {
+                    contentChannelItems.Add(item);
+                }
+            }
+
+            return contentChannelItems.AsQueryable();
+        }
+
+        #endregion
+
     }
 }
