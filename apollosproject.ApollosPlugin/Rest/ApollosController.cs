@@ -356,34 +356,35 @@ namespace apollosproject.ApollosPlugin.Rest
         [EnableQuery]
         [Authenticate, Secured]
         [System.Web.Http.Route("api/Apollos/ContentChannelItems/GetByCurrentPerson")]
-        public IQueryable<ContentChannelItem> GetByCurrentPerson()
+        public IQueryable<ContentChannelItem> GetByCurrentPerson( string contentChannelIds )
         {
-            // Set an empty list for the final set of Content Channel Items that gets returned to the users
-            List<ContentChannelItem> contentChannelItems = new List<ContentChannelItem>();
+            // Split the given string of Content Channel Ids into a list and query for 
+            // Content Channel Items inside of those Content Channels
+            List<int> contentChannelIdList = contentChannelIds.Split(',').Select(int.Parse).ToList();
 
-            // Pulled code from the `api/Apollos/GetContentChannelItemsByIds` as a point of reference for
-            // requesting Content Channel Items
-            RockContext rockContext = new RockContext();
-            rockContext.Configuration.ProxyCreationEnabled = false;
-            IQueryable<ContentChannelItem> contentChannelItemList = new ContentChannelItemService(rockContext).Queryable().AsNoTracking();
-
-            // Gets the Current Person and loops through each Content Channel Item that was returned from the query.
-            // Since this is a get request, we want to filter the list by Rock's "View" permissions based on the 
-            // current person. If no person is passed, Rock will limit to only Content Channel Items that have the
-            // system permission of "All Users"
-            //
-            // Logic pulled/referenced from the `GetChildren` method in the ContentChannelItemsController.Partial.cs
-            // in the Core Rock project
-            var person = GetPerson();
-            foreach (var item in contentChannelItemList)
+            // If no Content Channel Ids were given, just return an empty result so make
+            // life easier for Rock
+            if (contentChannelIdList.Count < 1)
             {
-                if (item.IsAuthorized(Rock.Security.Authorization.VIEW, person))
-                {
-                    contentChannelItems.Add(item);
-                }
+                return Enumerable.Empty<ContentChannelItem>().AsQueryable();
             }
 
-            return contentChannelItems.AsQueryable();
+            // Get current person and set up the proxy for querying
+            var person = GetPerson();
+            RockContext rockContext = new RockContext();
+            rockContext.Configuration.ProxyCreationEnabled = false;
+
+            // Get all Content Channel Items for the given Content Channels
+            IQueryable<ContentChannelItem> contentChannelItemlist = new ContentChannelItemService(rockContext)
+                .Queryable()
+                .AsNoTracking()
+                .Where(item => contentChannelIdList.Contains(item.ContentChannelId));
+            
+            // Filter results by the current person's permission
+            return contentChannelItemlist
+                .ToList()
+                .Where(item => item.IsAuthorized(Rock.Security.Authorization.VIEW, person) )
+                .AsQueryable();
         }
 
         #endregion
