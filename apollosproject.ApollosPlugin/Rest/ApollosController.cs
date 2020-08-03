@@ -345,5 +345,49 @@ namespace apollosproject.ApollosPlugin.Rest
 
         #endregion
 
+
+        #region ContentChannelItems/GetByCurrentPerson
+
+        /// <summary>
+        /// Returns a list of content channel items filtered by the permissions of the current person.
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [EnableQuery]
+        [Authenticate, Secured]
+        [System.Web.Http.Route("api/Apollos/ContentChannelItems/GetByCurrentPerson")]
+        public IQueryable<ContentChannelItem> GetByCurrentPerson( string contentChannelIds )
+        {
+            // Split the given string of Content Channel Ids into a list and query for 
+            // Content Channel Items inside of those Content Channels
+            List<int> contentChannelIdList = contentChannelIds.Split(',').Select(int.Parse).ToList();
+
+            // If no Content Channel Ids were given, just return an empty result so make
+            // life easier for Rock
+            if (contentChannelIdList.Count < 1)
+            {
+                return Enumerable.Empty<ContentChannelItem>().AsQueryable();
+            }
+
+            // Get current person and set up the proxy for querying
+            var person = GetPerson();
+            RockContext rockContext = new RockContext();
+            rockContext.Configuration.ProxyCreationEnabled = false;
+
+            // Get all Content Channel Items for the given Content Channels
+            IQueryable<ContentChannelItem> contentChannelItemlist = new ContentChannelItemService(rockContext)
+                .Queryable()
+                .AsNoTracking()
+                .Where(item => contentChannelIdList.Contains(item.ContentChannelId));
+            
+            // Filter results by the current person's permission
+            return contentChannelItemlist
+                .ToList()
+                .Where(item => item.IsAuthorized(Rock.Security.Authorization.VIEW, person) )
+                .AsQueryable();
+        }
+
+        #endregion
+
     }
 }
