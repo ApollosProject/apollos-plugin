@@ -404,11 +404,6 @@ namespace apollosproject.ApollosPlugin.Rest
         [System.Web.Http.Route("api/Apollos/ChangedContentChannelItemsByDate")]
         public IQueryable<ContentChannelItem> ChangedContentChannelItemsByDate(DateTime changedSinceDate)
         {
-            // I want to return two things:
-            // 1. A list of content channel items that were created OR changed since the changedSinceDate.
-            // 2. A list of content channel items whose attributes were created OR changed since the changedSinceDate.
-            // Should also support all the nornal ODATA stuff (sorting and filtering and such).
-
             RockContext rockContext = new RockContext();
             IQueryable<ContentChannelItem> contentChannelItemList = new ContentChannelItemService(rockContext)
                 .Queryable()
