@@ -413,13 +413,12 @@ namespace apollosproject.ApollosPlugin.Rest
             IQueryable<ContentChannelItem> contentChannelItemList = new ContentChannelItemService(rockContext)
                 .Queryable()
                 .AsNoTracking()
-                .Where(cci => cci.CreatedDateTime >= changedSinceDate || cci.ModifiedDateTime >= changedSinceDate);
-
+                .Where(cci => (cci.CreatedDateTime >= changedSinceDate && cci.ModifiedDateTime == null) || cci.ModifiedDateTime >= changedSinceDate);
 
             IQueryable<ContentChannelItem> contentChannelItemList2 = new ContentChannelItemService(rockContext)
                 .Queryable()
                 .AsNoTracking()
-                .WhereAttributeValue(rockContext, a => a.CreatedDateTime >= changedSinceDate || a.ModifiedDateTime >= changedSinceDate);
+                .WhereAttributeValue(rockContext, a => (a.CreatedDateTime >= changedSinceDate && a.ModifiedDateTime == null) || a.ModifiedDateTime >= changedSinceDate);
 
             return contentChannelItemList.Union(contentChannelItemList2).AsQueryable();
         }
