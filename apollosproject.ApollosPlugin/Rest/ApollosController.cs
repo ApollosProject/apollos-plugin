@@ -18,6 +18,9 @@ using System.Data.Entity;
 
 namespace apollosproject.ApollosPlugin.Rest
 {
+    /// <summary>
+    /// API Controller for Apollos Project Rock REST endpoints
+    /// </summary>
     public class ApollosController : ApiControllerBase
     {
 
@@ -387,6 +390,33 @@ namespace apollosproject.ApollosPlugin.Rest
                 .AsQueryable();
         }
 
+        #endregion
+
+        #region GetChangedContentChannelItemsByDate
+        /// <summary>
+        /// Returns a list of content channel items that:
+        /// (a) were created or changed since the passed in date.
+        /// (b) had attributes that were created or changed since the passed in date.
+        /// </summary>
+        [HttpGet]
+        [EnableQuery]
+        [Authenticate, Secured]
+        [System.Web.Http.Route("api/Apollos/ChangedContentChannelItemsByDate")]
+        public IQueryable<ContentChannelItem> ChangedContentChannelItemsByDate(DateTime changedSinceDate)
+        {
+            RockContext rockContext = new RockContext();
+            IQueryable<ContentChannelItem> contentChannelItemList = new ContentChannelItemService(rockContext)
+                .Queryable()
+                .AsNoTracking()
+                .Where(cci => (cci.CreatedDateTime >= changedSinceDate && cci.ModifiedDateTime == null) || cci.ModifiedDateTime >= changedSinceDate);
+
+            IQueryable<ContentChannelItem> contentChannelItemList2 = new ContentChannelItemService(rockContext)
+                .Queryable()
+                .AsNoTracking()
+                .WhereAttributeValue(rockContext, a => (a.CreatedDateTime >= changedSinceDate && a.ModifiedDateTime == null) || a.ModifiedDateTime >= changedSinceDate);
+
+            return contentChannelItemList.Union(contentChannelItemList2).AsQueryable();
+        }
         #endregion
 
     }
