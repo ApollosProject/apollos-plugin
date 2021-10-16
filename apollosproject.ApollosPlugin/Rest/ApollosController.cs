@@ -18,9 +18,6 @@ using System.Data.Entity;
 
 namespace apollosproject.ApollosPlugin.Rest
 {
-    /// <summary>
-    /// API Controller for Apollos Project Rock REST endpoints
-    /// </summary>
     public class ApollosController : ApiControllerBase
     {
 
