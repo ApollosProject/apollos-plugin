@@ -158,6 +158,12 @@ What endpoints are available and what do they do?
 * **Route**: `api/Apollos/ChangedContentChannelItemsByDate`
 * **Description**: Returns a list of content channel items that: (a) were created or changed since the passed in date and (b) had attributes that were created or changed since the passed in date.
 
+## Updating via the Rock Shop
+If you are updating the plugin from one version to another via the Rock Shop, you should know that as of this writing, downloading the latest version of the plugin does NOT automatically overwrite
+the plugin files. In order to update to the latest version properly, you will have to (at a minimum) go into your `Rockweb/bin` folder and delete the `apollosProject.ApollosPlugin.dll` and
+`apollosProject.ApollosPlugin.xml` files before downloading the latest version. If the latest version includes an update to the Apollos Dashboard pages in Rock then you should also go into your `Plugins`
+folder and delete the `apollosProject` folder. This folder should include the source files for the `ApollosAudit` and `ApollosUser` pages. Don't worry, we'll call this out in the update notes should that happen.
+
 ---
 
 ## About the Apollos Project
