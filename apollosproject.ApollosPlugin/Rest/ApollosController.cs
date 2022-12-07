@@ -416,5 +416,21 @@ namespace apollosproject.ApollosPlugin.Rest
         }
         #endregion
 
+        #region GetPluginVersion
+        /// <summary>
+        /// Returns the currently installed version of the Apollos Plugin.
+        /// </summary>
+        [HttpGet]
+        [Authenticate, Secured]
+        [System.Web.Http.Route("api/Apollos/GetPluginVersion")]
+        public String GetPluginVersion()
+        {
+            // Get the file version.
+            System.Reflection.Assembly assembly = System.Reflection.Assembly.GetExecutingAssembly();
+            System.Diagnostics.FileVersionInfo fvi = System.Diagnostics.FileVersionInfo.GetVersionInfo(assembly.Location);
+            string version = fvi.FileVersion;
+            return version;
+        }
+        #endregion
     }
 }
