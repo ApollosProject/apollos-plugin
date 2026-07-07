@@ -1,0 +1,3 @@
+# CODEOWNERS — auto-assigns reviewers and records area ownership. Review is NOT required.
+# Default owner — whole repo (Apollos Rock RMS plugin)
+*                                       @solideo-gloria
