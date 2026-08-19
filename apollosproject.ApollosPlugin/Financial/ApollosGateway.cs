@@ -121,6 +121,12 @@ namespace apollosproject.ApollosPlugin.Financial
 
     public class ApollosGateway : GatewayComponent, IAutomatedGatewayComponent, IObsidianHostedGatewayComponent, IHostedGatewayComponent, IFeeCoverageGatewayComponent, ISettlementGateway, IScheduledNumberOfPaymentsGateway
     {
+        /// <summary>
+        /// The gateway records gifts that Apollos has already processed. It cannot take money, so
+        /// every Rock-initiated payment path fails with this message instead of reporting success.
+        /// </summary>
+        internal const string NoPaymentProcessingMessage = "The Apollos gateway records gifts already processed by Apollos and cannot process payments. Choose your church's payment gateway instead.";
+
         #region Obsidian
 
         /// <summary>
@@ -291,28 +297,7 @@ namespace apollosproject.ApollosPlugin.Financial
         /// <returns></returns>
         public override FinancialTransaction Charge( FinancialGateway financialGateway, PaymentInfo paymentInfo, out string errorMessage )
         {
-            errorMessage = string.Empty;
-
-            if ( ValidateCard( financialGateway, paymentInfo, out errorMessage ) )
-            {
-                var transaction = new FinancialTransaction();
-                transaction.TransactionCode = "T" + RockDateTime.Now.ToString( "yyyyMMddHHmmssFFF" );
-                var referencePaymentInfo = paymentInfo as ReferencePaymentInfo;
-
-                transaction.FinancialPaymentDetail = new FinancialPaymentDetail()
-                {
-                    GatewayPersonIdentifier = referencePaymentInfo?.GatewayPersonIdentifier,
-                    FinancialPersonSavedAccountId = referencePaymentInfo?.FinancialPersonSavedAccountId,
-                    ExpirationMonth = referencePaymentInfo?.PaymentExpirationDate?.Month,
-                    ExpirationYear = referencePaymentInfo?.PaymentExpirationDate?.Year,
-                    CurrencyTypeValueId = DefinedValueCache.GetId( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CREDIT_CARD.AsGuid() ),
-                    AccountNumberMasked = paymentInfo.MaskedNumber,
-                    CreditCardTypeValueId = CreditCardPaymentInfo.GetCreditCardTypeFromCreditCardNumber( paymentInfo.MaskedNumber ?? string.Empty )?.Id ?? DefinedValueCache.GetId( Rock.SystemGuid.DefinedValue.CREDITCARD_TYPE_VISA.AsGuid() )
-                };
-
-                return transaction;
-            }
-
+            errorMessage = NoPaymentProcessingMessage;
             return null;
         }
 
@@ -325,15 +310,7 @@ namespace apollosproject.ApollosPlugin.Financial
         /// <returns></returns>
         public override FinancialTransaction Authorize( FinancialGateway financialGateway, PaymentInfo paymentInfo, out string errorMessage )
         {
-            errorMessage = string.Empty;
-
-            if ( ValidateCard( financialGateway, paymentInfo, out errorMessage ) )
-            {
-                var transaction = new FinancialTransaction();
-                transaction.TransactionCode = "T" + RockDateTime.Now.ToString( "yyyyMMddHHmmssFFF" );
-                return transaction;
-            }
-
+            errorMessage = NoPaymentProcessingMessage;
             return null;
         }
         /// <summary>
@@ -346,11 +323,8 @@ namespace apollosproject.ApollosPlugin.Financial
         /// <returns></returns>
         public override FinancialTransaction Credit( FinancialTransaction transaction, decimal amount, string comment, out string errorMessage )
         {
-            errorMessage = string.Empty;
-
-            var refundTransaction = new FinancialTransaction();
-            refundTransaction.TransactionCode = "T" + RockDateTime.Now.ToString( "yyyyMMddHHmmssFFF" );
-            return refundTransaction;
+            errorMessage = NoPaymentProcessingMessage;
+            return null;
         }
 
         /// <summary>
@@ -363,33 +337,7 @@ namespace apollosproject.ApollosPlugin.Financial
         /// <returns></returns>
         public override FinancialScheduledTransaction AddScheduledPayment( FinancialGateway financialGateway, PaymentSchedule schedule, PaymentInfo paymentInfo, out string errorMessage )
         {
-            if ( ValidateCard( financialGateway, paymentInfo, out errorMessage ) )
-            {
-                var scheduledTransaction = new FinancialScheduledTransaction
-                {
-                    IsActive = true,
-                    StartDate = schedule.StartDate,
-                    NextPaymentDate = schedule.StartDate,
-                    TransactionCode = "T" + RockDateTime.Now.ToString( "yyyyMMddHHmmssFFF" ),
-                    GatewayScheduleId = "Subscription_" + RockDateTime.Now.ToString( "yyyyMMddHHmmssFFF" ),
-                    LastStatusUpdateDateTime = RockDateTime.Now,
-                    Status = FinancialScheduledTransactionStatus.Active,
-                    StatusMessage = "active",
-                    NumberOfPayments = schedule.NumberOfPayments,
-
-                    FinancialPaymentDetail = new FinancialPaymentDetail()
-                    {
-                        ExpirationMonth = ( paymentInfo as ReferencePaymentInfo )?.PaymentExpirationDate?.Month,
-                        ExpirationYear = ( paymentInfo as ReferencePaymentInfo )?.PaymentExpirationDate?.Year,
-                        CurrencyTypeValueId = DefinedValueCache.GetId( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CREDIT_CARD.AsGuid() ),
-                        AccountNumberMasked = "************6789",
-                        CreditCardTypeValueId = CreditCardPaymentInfo.GetCreditCardTypeFromCreditCardNumber( "************6789" )?.Id ?? DefinedValueCache.GetId( Rock.SystemGuid.DefinedValue.CREDITCARD_TYPE_VISA.AsGuid() )
-                    }
-                };
-
-                return scheduledTransaction;
-            }
-
+            errorMessage = NoPaymentProcessingMessage;
             return null;
         }
 
@@ -401,9 +349,8 @@ namespace apollosproject.ApollosPlugin.Financial
         /// <returns></returns>
         public override bool ReactivateScheduledPayment( FinancialScheduledTransaction transaction, out string errorMessage )
         {
-            transaction.IsActive = true;
-            errorMessage = string.Empty;
-            return true;
+            errorMessage = NoPaymentProcessingMessage;
+            return false;
         }
 
         /// <summary>
@@ -415,15 +362,8 @@ namespace apollosproject.ApollosPlugin.Financial
         /// <returns></returns>
         public override bool UpdateScheduledPayment( FinancialScheduledTransaction transaction, PaymentInfo paymentInfo, out string errorMessage )
         {
-            errorMessage = string.Empty;
-            var referencePaymentInfo = paymentInfo as ReferencePaymentInfo;
-
-            if ( referencePaymentInfo != null && referencePaymentInfo.TransactionCode.IsNotNullOrWhiteSpace() )
-            {
-                transaction.TransactionCode = referencePaymentInfo.TransactionCode;
-            }
-
-            return true;
+            errorMessage = NoPaymentProcessingMessage;
+            return false;
         }
 
         /// <summary>
@@ -663,75 +603,6 @@ namespace apollosproject.ApollosPlugin.Financial
             }
         }
 
-
-        #endregion
-
-        #region Private Methods
-
-        private bool ValidateCard( FinancialGateway financialGateway, PaymentInfo paymentInfo, out string errorMessage )
-        {
-            string cardNumber = string.Empty;
-            var declinedCVV = this.GetAttributeValue( financialGateway, AttributeKey.DeclinedCVV );
-            int maxExpirationYears = this.GetAttributeValue( financialGateway, AttributeKey.MaxExpirationYears ).AsIntegerOrNull() ?? 10;
-
-            CreditCardPaymentInfo ccPayment = paymentInfo as CreditCardPaymentInfo;
-            if ( ccPayment != null )
-            {
-                if ( declinedCVV.IsNotNullOrWhiteSpace() && ccPayment.Code == declinedCVV )
-                {
-                    errorMessage = "Declined CVV";
-                    return false;
-                }
-
-                cardNumber = ccPayment.Number;
-
-                if ( ccPayment.ExpirationDate < RockDateTime.Now.Date )
-                {
-                    errorMessage = "Card Expired";
-                    return false;
-                }
-
-                if ( ccPayment.ExpirationDate > RockDateTime.Now.AddYears( maxExpirationYears ) )
-                {
-                    errorMessage = "Invalid Card Expiration";
-                    return false;
-                }
-
-                if ( ccPayment.Number.IsNullOrWhiteSpace() )
-                {
-                    errorMessage = "Card number is required.";
-                    return false;
-                }
-
-                if ( ccPayment.Code.IsNullOrWhiteSpace() )
-                {
-                    errorMessage = "CVV is required.";
-                    return false;
-                }
-            }
-
-            SwipePaymentInfo swipePayment = paymentInfo as SwipePaymentInfo;
-            if ( swipePayment != null )
-            {
-                cardNumber = swipePayment.Number;
-            }
-
-            if ( !string.IsNullOrWhiteSpace( cardNumber ) )
-            {
-                var declinedNumbers = GetAttributeValue( financialGateway, AttributeKey.DeclinedCardNumbers );
-                if ( !string.IsNullOrWhiteSpace( declinedNumbers ) )
-                {
-                    if ( declinedNumbers.SplitDelimitedValues().Any( n => cardNumber.EndsWith( n ) ) )
-                    {
-                        errorMessage = "Declined Card";
-                        return false;
-                    }
-                }
-            }
-
-            errorMessage = string.Empty;
-            return true;
-        }
 
         #endregion
 
