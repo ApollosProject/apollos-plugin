@@ -1,8 +1,10 @@
 # Apollos Plugin
-An API plugin for Rock, the Apollos plugin adds a number of helpful API endpoints for use in development of your Apollos mobile app. 
+An API plugin for Rock RMS. It adds REST endpoints used by Apollos mobile apps, plus optional giving/finance pieces that talk to the Apollos cluster. 
 
 ## Tech Specs
 The Apollos plugin is written in C#, currently using version `4.7.2` of the .NET Framework. It is written specifically to work with Rock RMS. You can find out more about Rock at https://www.rockrms.com.
+
+The finance features in `1.8.1.0` (cluster settings, finance sync job, and giving gateway) were built against **Rock v18**. The original REST endpoints still target the Rock APIs described below; if you are on an older Rock, you may only want the REST controller and dashboard blocks from earlier plugin versions.
 
 ## Setup your development environment
 If you’re interested in contributing to this plugin, the first step is to get your development environment up and running. 
@@ -65,6 +67,29 @@ All the endpoints you create should follow this pattern. So what are we looking 
 	* and that its route is defined.
 * The rest is the function that gets the content channel items and returns them in a list.
 
+## Finance and Apollos Cluster
+These pieces live alongside the REST API. They are how Rock stores Apollos cluster credentials and how giving data gets synced.
+
+### Cluster credentials (Defined Type)
+Create a Defined Type named `Apollos Plugin` (the name is configurable). Add Defined Values for each environment, for example `Production` and `Development`. On those values, add attributes:
+
+* `BaseUrl` — Apollos cluster URL, e.g. `https://cluster.apollos.app`
+* `ChurchSlug` — church identifier sent as the `x-church` header
+* `ApiKey` — cluster API key sent as the `x-api-key` header (use an Encrypted Text field)
+
+The **Apollos Cluster Configuration** block (`ApollosAudit.ascx`) on the Apollos Dashboard lets an admin pick a Defined Value and edit those three fields. The finance sync job reads the same Defined Value.
+
+### Apollos Finance Sync job
+`Jobs/StripeSyncJob.cs` registers a Rock job named **Apollos Finance Sync**. Configure it with:
+
+* **Config DefinedType Name** — defaults to `Apollos Plugin`
+* **Config Value Name** — exact Defined Value text, e.g. `Production`
+
+When the job runs it `POST`s `{BaseUrl}/finance/rock/sync`, then polls `{BaseUrl}/finance/rock/sync/{jobId}` until the cluster reports a non-`active` status. The job’s last status message includes progress plus match / charge / subscription error counts from the cluster.
+
+### Apollos payment gateway
+`Financial/ApollosGateway.cs` is a Rock giving gateway so scheduled gifts and the giving UI can create transactions in Rock. **This version records transactions locally in Rock. It does not call Stripe or another processor.** Pair it with the finance sync job if actual charges live on the Apollos cluster / Stripe.
+
 ## Create a release
 Okay, so you’ve gotten the project up and running and you’ve written an endpoint. Now how do we get that endpoint into the Rock Shop and the hands of the folks who need to use it?
 
@@ -121,6 +146,7 @@ What endpoints are available and what do they do?
 * **Parameters**: `int entityTypeId, int entityId, System.Guid? categoryGuid, int categoryId`
 * **Route**: `api/Apollos/GetPersistedDataViewsForEntity/{entityTypeId}/{entityId}`
 * **Description**: Returns a list of dataviews that a person is a part of.
+* **Status**: Disabled in `1.8.1.0` (the implementation is commented out after a Rock API change). Restore it only after verifying `DataViewPersistedValues` still matches your Rock version.
 
 ### `GetEventItemOccurencesByCalendarId`
 * **Type**: GET
