@@ -87,7 +87,7 @@ namespace apollosproject.ApollosPlugin.Rest
             int contentChannelItemEntityTypeId = EntityTypeCache.Get("Rock.Model.ContentChannelItem").Id;
 
             // Get the Field Type (Attribute Type) Id of the Data View Field Type.
-            int fieldTypeId = FieldTypeCache.Get(Rock.SystemGuid.FieldType.DATAVIEWS.AsGuid()).Id;
+            int fieldTypeId = FieldTypeCache.Get(Guid.Parse(Rock.SystemGuid.FieldType.DATAVIEWS)).Id;
 
             // Get the list of attributes that are of the Rock.Model.ContentChannelItem entity type
             // and that are of the Data View field type.
@@ -115,7 +115,7 @@ namespace apollosproject.ApollosPlugin.Rest
         #endregion
 
 
-        #region DataViewByPerson
+        //#region DataViewByPerson
         /// <summary>
         /// Returns a list of dataviews that a person is a part of
         /// </summary>
@@ -124,34 +124,34 @@ namespace apollosproject.ApollosPlugin.Rest
         /// <param name="categoryGuid"></param>
         /// <param name="categoryId"></param>
         /// <returns></returns>
-        [HttpGet]
-        [EnableQuery]
-        [Authenticate, Secured]
-        [System.Web.Http.Route("api/Apollos/GetPersistedDataViewsForEntity/{entityTypeId}/{entityId}")]
-        public IQueryable<DataView> GetPersistedDataViewsForEntity(int entityTypeId, int entityId, System.Guid? categoryGuid = null, int categoryId = 0)
-        {
-            var rockContext = new RockContext();
-            rockContext.Configuration.ProxyCreationEnabled = false;
+        //[HttpGet]
+        //[EnableQuery]
+        //[Authenticate, Secured]
+        //[System.Web.Http.Route("api/Apollos/GetPersistedDataViewsForEntity/{entityTypeId}/{entityId}")]
+        //public IQueryable<DataView> GetPersistedDataViewsForEntity(int entityTypeId, int entityId, System.Guid? categoryGuid = null, int categoryId = 0)
+        //{
+        //    var rockContext = new RockContext();
+        //    rockContext.Configuration.ProxyCreationEnabled = false;
 
-            // Get the data view guids from the DataViewPersistedValues table that the Person Id is a part of
-            var persistedValuesQuery = rockContext.DataViewPersistedValues.AsNoTracking().Where(a => a.EntityId == entityId && a.DataView.EntityTypeId == entityTypeId);
-            IQueryable<DataView> dataViewList = persistedValuesQuery.Select(a => a.DataView);
+        //    // Get the data view guids from the DataViewPersistedValues table that the Person Id is a part of
+        //    var persistedValuesQuery = rockContext.DataViewPersistedValues.AsNoTracking().Where(a => a.EntityId == entityId && a.DataView.EntityTypeId == entityTypeId);
+        //    IQueryable<DataView> dataViewList = persistedValuesQuery.Select(a => a.DataView);
 
-            if (categoryGuid != null)
-            {
-                dataViewList = dataViewList.Where(a => a.Category.Guid == categoryGuid);
-            }
+        //    if (categoryGuid != null)
+        //    {
+        //        dataViewList = dataViewList.Where(a => a.Category.Guid == categoryGuid);
+        //    }
 
-            if (categoryId != 0)
-            {
-                dataViewList = dataViewList.Where(a => a.CategoryId == categoryId);
-            }
+        //    if (categoryId != 0)
+        //    {
+        //        dataViewList = dataViewList.Where(a => a.CategoryId == categoryId);
+        //    }
 
-            // Return DataView as IQueryable
-            return dataViewList;
+        //    // Return DataView as IQueryable
+        //    return dataViewList;
 
-        }
-        #endregion
+        //}
+        //#endregion
 
         #region GetEventItemOccurencesByCalendarId
         /// <summary>
@@ -205,7 +205,7 @@ namespace apollosproject.ApollosPlugin.Rest
             int contentChannelItemEntityTypeId = EntityTypeCache.Get("Rock.Model.ContentChannelItem").Id;
 
             // Get the Field Type (Attribute Type) Id of the Data View Field Type.
-            int fieldTypeId = FieldTypeCache.Get(Rock.SystemGuid.FieldType.CAMPUSES.AsGuid()).Id;
+            int fieldTypeId = FieldTypeCache.Get(Guid.Parse(Rock.SystemGuid.FieldType.CAMPUSES)).Id;
 
             // Get the list of attributes that are of the Rock.Model.ContentChannelItem entity type
             // and that are of the Campus field type.
@@ -261,7 +261,7 @@ namespace apollosproject.ApollosPlugin.Rest
             int contentChannelItemEntityTypeId = EntityTypeCache.Get("Rock.Model.ContentChannelItem").Id;
 
             // Get the Field Type (Attribute Type) Id of the Data View Field Type.
-            int fieldTypeId = FieldTypeCache.Get(Rock.SystemGuid.FieldType.CAMPUSES.AsGuid()).Id;
+            int fieldTypeId = FieldTypeCache.Get(Guid.Parse(Rock.SystemGuid.FieldType.CAMPUSES)).Id;
 
             // Get the list of attributes that are of the Rock.Model.ContentChannelItem entity type
             // and that are of the Campus field type.
