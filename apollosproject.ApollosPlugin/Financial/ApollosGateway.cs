@@ -138,8 +138,8 @@ namespace apollosproject.ApollosPlugin.Financial
         /// <returns></returns>
         public string CreateCustomerAccount( FinancialGateway financialGateway, ReferencePaymentInfo paymentInfo, out string errorMessage )
         {
-            errorMessage = string.Empty;
-            return Guid.NewGuid().ToString( "N" );
+            errorMessage = NoPaymentProcessingMessage;
+            return null;
         }
 
         /// <summary>
