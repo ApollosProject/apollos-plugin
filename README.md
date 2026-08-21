@@ -88,7 +88,7 @@ The **Apollos Cluster Configuration** block (`ApollosAudit.ascx`) on the Apollos
 When the job runs it `POST`s `{BaseUrl}/finance/rock/sync`, then polls `{BaseUrl}/finance/rock/sync/{jobId}` until the cluster reports a non-`active` status. The job’s last status message includes progress plus match / charge / subscription error counts from the cluster.
 
 ### Apollos payment gateway
-`Financial/ApollosGateway.cs` is a Rock giving gateway so scheduled gifts and the giving UI can create transactions in Rock. **This version records transactions locally in Rock. It does not call Stripe or another processor.** Pair it with the finance sync job if actual charges live on the Apollos cluster / Stripe.
+`Financial/ApollosGateway.cs` is reporting-only for gifts Apollos has already processed. It does not call Stripe or another processor, and it rejects Rock-initiated charges, authorizations, refunds, and scheduled-payment mutations. Do not select it for the giving UI, paid registration templates, or payment entry; use the church's real payment gateway instead. The Apollos Finance Sync job imports processed gifts independently of this component.
 
 ## Create a release
 Okay, so you’ve gotten the project up and running and you’ve written an endpoint. Now how do we get that endpoint into the Rock Shop and the hands of the folks who need to use it?
